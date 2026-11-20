@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>零用钱记账本</title>
+  <style>
+    /* ===== 全局样式 ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Microsoft JhengHei", "PingFang HK", sans-serif;
+      background: #f5f6f8;
+      color: #1f2328;
+      max-width: 480px;   /* 手机宽度，方便在手机上也能用 */
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 16px 60px;
+    }
+
+    h1 { font-size: 20px; margin-bottom: 16px; }
+
+    /* ===== 余额卡片 ===== */
+    .balance-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+    }
+    .balance-card .label { font-size: 13px; color: #888; }
+    .balance-card .amount {
+      font-size: 40px;
+      font-weight: 700;
+      margin: 6px 0;
+    }
+    .amount.plus  { color: #16a34a; }  /* 有钱剩：绿色 */
+    .amount.minus { color: #dc2626; }  /* 超支：红色 */
+
+    /* ===== 记账表单 ===== */
+    .form-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+    }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab {
+      flex: 1; padding: 10px; border: none; border-radius: 10px;
+      background: #f0f1f3; cursor: pointer; font-size: 15px;
+    }
+    .tab.active { color: #fff; font-weight: 600; }
+    .tab.income.active  { background: #16a34a; }  /* 收入选中：绿 */
+    .tab.expense.active { background: #dc2626; }  /* 支出选中：红 */
+
+    input, select {
+      width: 100%; padding: 12px; font-size: 16px;
+      border: 1px solid #e2e4e8; border-radius: 10px; margin-bottom: 10px;
+    }
+    button.add {
+      width: 100%; padding: 13px; font-size: 16px; font-weight: 600;
+      border: none; border-radius: 10px; background: #2563eb;
+      color: #fff; cursor: pointer;
+    }
+    button.add:active { opacity: 0.8; }
+
+    /* ===== 记录列表 ===== */
+    .list-title { font-size: 15px; margin: 8px 0 10px; color: #555; }
+    .empty { color: #aaa; text-align: center; padding: 24px 0; }
+    .record {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fff; border-radius: 12px; padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .record .info .cat { font-size: 14px; font-weight: 600; }
+    .record .info .note { font-size: 12px; color: #999; margin-top: 2px; }
+    .record .right { display: flex; align-items: center; gap: 10px; }
+    .record .money { font-size: 16px; font-weight: 700; }
+    .money.in  { color: #16a34a; }
+    .money.out { color: #dc2626; }
+    .record .del {
+      border: none; background: #fee2e2; color: #dc2626;
+      border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px;
+    }
+
+    /* ===== 数据备份按钮 ===== */
+    .data-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+    .data-actions button {
+      flex: 1; padding: 11px; font-size: 14px;
+      border: 1px solid #e2e4e8; border-radius: 10px;
+      background: #fff; cursor: pointer;
+    }
+    .data-actions button:active { background: #f0f1f3; }
+  </style>
+</head>
+<body>
+  <h1>💰 零用钱记账本</h1>
+
+  <!-- 余额卡片 -->
+  <div class="balance-card">
+    <div class="label">当前余额</div>
+    <div class="amount" id="balance">HK$0.00</div>
+  </div>
+
+  <!-- 记账表单 -->
+  <div class="form-card">
+    <div class="tabs">
+      <button class="tab expense active" id="tabExpense">💸 支出</button>
+      <button class="tab income" id="tabIncome">💰 收入</button>
+    </div>
+
+    <input type="number" id="amount" placeholder="金额（例如 20）" min="0" step="0.1">
+    <select id="category"></select>
+    <input type="text" id="note" placeholder="备注（可选，例如「午餐」）">
+    <button class="add" id="addBtn">＋ 记一笔</button>
+  </div>
+
+  <!-- 数据备份 -->
+  <div class="data-actions">
+    <button id="exportBtn">⬇️ 导出数据</button>
+    <button id="importBtn">⬆️ 导入数据</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+  </div>
+
+  <!-- 历史记录 -->
+  <div class="list-title">📋 记录</div>
+  <div id="list"></div>
+
+  <script>
+    // ===== 数据存在浏览器本地（localStorage），关掉网页也不会丢 =====
+
+    // 预设分类：支出和收入各自不同
+    const CATEGORIES = {
+      expense: ['食物', '交通', '娱乐', '文具', '其他'],
+      income:  ['零用钱', '红包', '兼职', '其他']
+    };
+
+    // 当前选中的类型，默认是「支出」
+    let currentType = 'expense';
+
+    // 从本地读取记录，没有就返回空数组
+    function loadRecords() {
+      const raw = localStorage.getItem('records');
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    // 把记录保存回本地
+    function saveRecords(records) {
+      localStorage.setItem('records', JSON.stringify(records));
+    }
+
+    // ===== 渲染界面 =====
+
+    // 更新分类下拉框的选项
+    function renderCategories() {
+      const sel = document.getElementById('category');
+      sel.innerHTML = ''; // 清空
+      CATEGORIES[currentType].forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        sel.appendChild(opt);
+      });
+    }
+
+    // 更新余额数字
+    function renderBalance(records) {
+      let total = 0;
+      records.forEach(r => {
+        // 收入加钱，支出减钱
+        total += (r.type === 'income' ? r.amount : -r.amount);
+      });
+      const el = document.getElementById('balance');
+      // 保留两位小数，显示港币符号
+      el.textContent = 'HK$' + total.toFixed(2);
+      // 正数绿色，负数红色
+      el.className = 'amount ' + (total < 0 ? 'minus' : 'plus');
+    }
+
+    // 更新历史记录列表
+    function renderList(records) {
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      if (records.length === 0) {
+        list.innerHTML = '<div class="empty">还没有记录，记第一笔吧 👆</div>';
+        return;
+      }
+      // 新的记录显示在最上面
+      records.slice().reverse().forEach((r, i) => {
+        const realIndex = records.length - 1 - i; // 反推回原数组位置，方便删除
+        const div = document.createElement('div');
+        div.className = 'record';
+        div.innerHTML =
+          '<div class="info">' +
+            '<div class="cat">' + r.category + '</div>' +
+            '<div class="note">' + (r.note || '') + '</div>' +
+          '</div>' +
+          '<div class="right">' +
+            '<div class="money ' + (r.type === 'income' ? 'in' : 'out') + '">' +
+              (r.type === 'income' ? '+' : '-') + r.amount.toFixed(2) +
+            '</div>' +
+            '<button class="del" data-index="' + realIndex + '">删</button>' +
+          '</div>';
+        list.appendChild(div);
+      });
+
+      // 给每个「删」按钮绑定删除事件
+      document.querySelectorAll('.del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.index);
+          const records = loadRecords();
+          records.splice(idx, 1); // 移除这一条
+          saveRecords(records);
+          refresh(); // 重新渲染
+        });
+      });
+    }
+
+    // 一次性刷新所有内容
+    function refresh() {
+      const records = loadRecords();
+      renderBalance(records);
+      renderList(records);
+    }
+
+    // ===== 交互事件 =====
+
+    // 切换「支出 / 收入」
+    function switchType(type) {
+      currentType = type;
+      document.getElementById('tabExpense').classList.toggle('active', type === 'expense');
+      document.getElementById('tabIncome').classList.toggle('active', type === 'income');
+      renderCategories();
+    }
+    document.getElementById('tabExpense').addEventListener('click', () => switchType('expense'));
+    document.getElementById('tabIncome').addEventListener('click', () => switchType('income'));
+
+    // 点击「记一笔」
+    document.getElementById('addBtn').addEventListener('click', () => {
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!amount || amount <= 0) {
+        alert('请输入正确的金额');
+        return;
+      }
+      const category = document.getElementById('category').value;
+      const note = document.getElementById('note').value.trim();
+
+      const records = loadRecords();
+      records.push({ type: currentType, amount, category, note });
+      saveRecords(records);
+
+      // 清空输入框，方便记下一笔
+      document.getElementById('amount').value = '';
+      document.getElementById('note').value = '';
+      refresh();
+    });
+
+    // ===== 导出 / 导入 =====
+
+    // 导出：把数据变成 JSON 文件下载
+    function exportData() {
+      const records = loadRecords();
+      const json = JSON.stringify(records, null, 2); // 转成好看的 JSON 文字
+      const blob = new Blob([json], { type: 'application/json' }); // 包成文件
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); // 造一个隐藏的下载链接
+      a.href = url;
+      a.download = '零用钱记账数据-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click(); // 触发下载
+      URL.revokeObjectURL(url);
+    }
+
+    // 导入：读用户选的文件，还原数据
+    function importData(file) {
+      const reader = new FileReader(); // 用来读文件的工具
+      reader.onload = function (e) {
+        try {
+          const records = JSON.parse(e.target.result); // 把文字变回数据
+          if (!Array.isArray(records)) throw new Error('格式不对');
+          saveRecords(records);
+          refresh();
+          alert('导入成功！');
+        } catch (err) {
+          alert('导入失败：文件格式不对');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // 点「导出」按钮 → 直接导出
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+
+    // 点「导入」按钮 → 弹出选文件框
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importFile').click();
+    });
+
+    // 选中文件后 → 导入
+    document.getElementById('importFile').addEventListener('change', (e) => {
+      if (e.target.files[0]) importData(e.target.files[0]);
+    });
+
+    // ===== 启动：初始化页面 =====
+    renderCategories();
+    refresh();
+  </script>
+</body>
+</html>
