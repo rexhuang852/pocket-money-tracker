@@ -12,84 +12,89 @@
 
     body {
       font-family: -apple-system, "Microsoft JhengHei", "PingFang HK", sans-serif;
-      background: #f5f6f8;
-      color: #1f2328;
+      background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 40%);
+      color: #0f172a;
       max-width: 480px;
       margin: 0 auto;
       min-height: 100vh;
       padding: 20px 16px 60px;
     }
 
-    h1 { font-size: 20px; margin-bottom: 16px; }
+    /* 顶部标题 */
+    .header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header-date { font-size: 13px; color: #64748b; }
 
-    /* ===== 余额卡片 ===== */
+    /* ===== 余额卡片（渐变主角） ===== */
     .balance-card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 20px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      border-radius: 18px;
+      padding: 24px 20px;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
       margin-bottom: 16px;
     }
-    .balance-card .label { font-size: 13px; color: #888; }
-    .balance-card .amount { font-size: 40px; font-weight: 700; margin: 6px 0; }
-    .amount.plus  { color: #16a34a; }
-    .amount.minus { color: #dc2626; }
+    .balance-card .label { font-size: 13px; color: rgba(255,255,255,0.85); }
+    .balance-card .amount {
+      font-size: 42px; font-weight: 800; margin: 6px 0; color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
 
     /* ===== 储蓄目标 ===== */
     .goal-card {
       background: #fff;
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 16px 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 12px rgba(15,23,42,0.06);
       margin-bottom: 16px;
     }
     .goal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .goal-title { font-size: 14px; font-weight: 600; }
     .goal-set {
-      border: 1px solid #e2e4e8; border-radius: 8px; background: #fafafa;
-      padding: 4px 10px; cursor: pointer; font-size: 12px;
+      border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;
+      padding: 5px 12px; cursor: pointer; font-size: 12px; color: #2563eb; font-weight: 600;
     }
-    .goal-name { font-size: 13px; color: #555; }
+    .goal-name { font-size: 13px; color: #64748b; }
     .goal-amount { font-size: 15px; font-weight: 700; margin-top: 4px; }
     .progress-bar {
-      width: 100%; height: 10px; background: #f0f1f3;
+      width: 100%; height: 10px; background: #eef2f7;
       border-radius: 5px; margin: 10px 0 6px; overflow: hidden;
     }
     .progress-fill {
-      height: 100%; background: #16a34a; border-radius: 5px;
-      width: 0%; transition: width 0.3s;
+      height: 100%; background: linear-gradient(90deg, #2563eb, #7c3aed);
+      border-radius: 5px; width: 0%; transition: width 0.4s ease;
     }
-    .goal-pct { font-size: 12px; color: #999; }
+    .goal-pct { font-size: 12px; color: #64748b; }
 
     /* ===== 本月统计 ===== */
     .stats-card {
       background: #fff;
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 16px 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 12px rgba(15,23,42,0.06);
       margin-bottom: 16px;
     }
-    .stats-title { font-size: 13px; color: #888; display: block; margin-bottom: 10px; }
+    .stats-title { font-size: 13px; color: #64748b; display: block; margin-bottom: 12px; }
     .stats-row { display: flex; text-align: center; }
     .stat { flex: 1; }
-    .stat-label { font-size: 12px; color: #999; }
-    .stat-value { font-size: 17px; font-weight: 700; margin-top: 3px; }
+    .stat-label { font-size: 12px; color: #94a3b8; }
+    .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
     .stat-value.in  { color: #16a34a; }
     .stat-value.out { color: #dc2626; }
     .report-btn {
-      width: 100%; margin-top: 14px; padding: 10px;
-      border: 1px solid #e2e4e8; border-radius: 10px;
-      background: #fafafa; cursor: pointer; font-size: 14px;
+      width: 100%; margin-top: 14px; padding: 11px;
+      border: 1px solid #e2e8f0; border-radius: 10px;
+      background: #f8fafc; cursor: pointer; font-size: 14px;
+      color: #2563eb; font-weight: 600;
     }
-    .report-btn:active { background: #f0f1f3; }
+    .report-btn:active { background: #eef2f7; }
 
     /* ===== 支出分类饼图 ===== */
     .chart-card {
       background: #fff;
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 16px 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 12px rgba(15,23,42,0.06);
       margin-bottom: 16px;
     }
     .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
@@ -98,47 +103,52 @@
     /* ===== 记账表单 ===== */
     .form-card {
       background: #fff;
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 12px rgba(15,23,42,0.06);
       margin-bottom: 16px;
     }
     .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
     .tab {
       flex: 1; padding: 10px; border: none; border-radius: 10px;
-      background: #f0f1f3; cursor: pointer; font-size: 14px;
+      background: #eef2f7; cursor: pointer; font-size: 14px;
+      color: #475569; transition: all 0.15s;
     }
-    .tab.active { color: #fff; font-weight: 600; }
-    .tab.income.active  { background: #16a34a; }
-    .tab.expense.active { background: #dc2626; }
-    .tab.saving.active  { background: #7c3aed; }   /* 存款选中：紫色 */
+    .tab.active { color: #fff; font-weight: 700; }
+    .tab.income.active  { background: #16a34a; box-shadow: 0 4px 10px rgba(22,163,74,0.3); }
+    .tab.expense.active { background: #dc2626; box-shadow: 0 4px 10px rgba(220,38,38,0.3); }
+    .tab.saving.active  { background: #7c3aed; box-shadow: 0 4px 10px rgba(124,58,237,0.3); }
 
     input, select {
-      width: 100%; padding: 12px; font-size: 16px;
-      border: 1px solid #e2e4e8; border-radius: 10px; margin-bottom: 10px;
+      width: 100%; padding: 13px; font-size: 16px;
+      border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 10px;
+      background: #f8fafc; color: #0f172a;
     }
+    input:focus, select:focus { outline: none; border-color: #2563eb; background: #fff; }
     button.add {
-      width: 100%; padding: 13px; font-size: 16px; font-weight: 600;
-      border: none; border-radius: 10px; background: #2563eb;
+      width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
+      border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
       color: #fff; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(37,99,235,0.3);
     }
-    button.add:active { opacity: 0.8; }
+    button.add:active { opacity: 0.85; transform: scale(0.99); }
     .cancel-edit {
       width: 100%; margin-top: 8px; padding: 8px;
-      border: none; background: none; color: #999;
+      border: none; background: none; color: #94a3b8;
       cursor: pointer; font-size: 13px;
     }
 
     /* ===== 记录列表 ===== */
-    .list-title { font-size: 15px; margin: 8px 0 10px; color: #555; }
-    .empty { color: #aaa; text-align: center; padding: 24px 0; }
+    .list-title { font-size: 15px; font-weight: 700; margin: 8px 0 10px; color: #334155; }
+    .empty { color: #94a3b8; text-align: center; padding: 24px 0; }
     .record {
       display: flex; align-items: center; justify-content: space-between;
-      background: #fff; border-radius: 12px; padding: 12px 14px;
-      margin-bottom: 8px;
+      background: #fff; border-radius: 14px; padding: 14px;
+      margin-bottom: 8px; box-shadow: 0 1px 4px rgba(15,23,42,0.04);
     }
     .record .info .cat { font-size: 14px; font-weight: 600; }
-    .record .info .note { font-size: 12px; color: #999; margin-top: 2px; }
+    .record .info .note { font-size: 12px; color: #94a3b8; margin-top: 2px; }
     .record .right { display: flex; align-items: center; gap: 8px; }
     .record .money { font-size: 16px; font-weight: 700; }
     .money.in     { color: #16a34a; }
@@ -146,53 +156,56 @@
     .money.saving { color: #7c3aed; }
     .record .edit {
       border: none; background: #dbeafe; color: #2563eb;
-      border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px;
     }
     .record .del {
       border: none; background: #fee2e2; color: #dc2626;
-      border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px;
     }
 
     /* ===== 数据备份按钮 ===== */
     .data-actions { display: flex; gap: 8px; margin-bottom: 16px; }
     .data-actions button {
-      flex: 1; padding: 11px; font-size: 14px;
-      border: 1px solid #e2e4e8; border-radius: 10px;
-      background: #fff; cursor: pointer;
+      flex: 1; padding: 12px; font-size: 14px;
+      border: 1px solid #e2e8f0; border-radius: 12px;
+      background: #fff; cursor: pointer; color: #475569;
     }
-    .data-actions button:active { background: #f0f1f3; }
+    .data-actions button:active { background: #f1f5f9; }
 
     /* ===== 年度报告弹窗 ===== */
     .modal {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+      background: rgba(15,23,42,0.55); align-items: center; justify-content: center;
       z-index: 100; padding: 20px;
     }
     .modal.show { display: flex; }
     .modal-content {
-      background: #fff; border-radius: 14px; padding: 20px;
+      background: #fff; border-radius: 18px; padding: 20px;
       width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto;
     }
     .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .modal-head h2 { font-size: 18px; }
     .modal-close {
-      border: none; background: #f0f1f3; border-radius: 8px;
-      padding: 6px 10px; cursor: pointer; font-size: 14px;
+      border: none; background: #eef2f7; border-radius: 8px;
+      padding: 6px 10px; cursor: pointer; font-size: 14px; color: #475569;
     }
     .report-section { margin-bottom: 16px; }
-    .report-section h3 { font-size: 14px; color: #555; margin-bottom: 8px; }
+    .report-section h3 { font-size: 14px; color: #475569; margin-bottom: 8px; }
     .report-overview { display: flex; text-align: center; }
     .report-overview .stat { flex: 1; }
     .report-line {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 1px solid #f0f1f3; font-size: 14px;
+      padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;
     }
-    .report-line .bar-wrap { flex: 1; margin: 0 10px; background: #f0f1f3; border-radius: 4px; height: 8px; }
-    .report-line .bar { height: 8px; border-radius: 4px; background: #2563eb; }
+    .report-line .bar-wrap { flex: 1; margin: 0 10px; background: #eef2f7; border-radius: 4px; height: 8px; }
+    .report-line .bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #2563eb, #7c3aed); }
   </style>
 </head>
 <body>
-  <h1>💰 零用钱记账本</h1>
+  <div class="header">
+    <h1>💰 零用钱记账本</h1>
+    <span class="header-date" id="today"></span>
+  </div>
 
   <!-- 余额卡片 -->
   <div class="balance-card">
@@ -691,6 +704,10 @@
     });
 
     // ===== 启动：初始化页面 =====
+    // 显示今天的日期
+    const today = new Date();
+    document.getElementById('today').textContent =
+      today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
     renderCategories();
     refresh();
   </script>
