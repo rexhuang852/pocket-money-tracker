@@ -34,6 +34,32 @@
     .amount.plus  { color: #16a34a; }
     .amount.minus { color: #dc2626; }
 
+    /* ===== 储蓄目标 ===== */
+    .goal-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+    }
+    .goal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .goal-title { font-size: 14px; font-weight: 600; }
+    .goal-set {
+      border: 1px solid #e2e4e8; border-radius: 8px; background: #fafafa;
+      padding: 4px 10px; cursor: pointer; font-size: 12px;
+    }
+    .goal-name { font-size: 13px; color: #555; }
+    .goal-amount { font-size: 15px; font-weight: 700; margin-top: 4px; }
+    .progress-bar {
+      width: 100%; height: 10px; background: #f0f1f3;
+      border-radius: 5px; margin: 10px 0 6px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: #16a34a; border-radius: 5px;
+      width: 0%; transition: width 0.3s;
+    }
+    .goal-pct { font-size: 12px; color: #999; }
+
     /* ===== 本月统计 ===== */
     .stats-card {
       background: #fff;
@@ -67,11 +93,12 @@
     .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
     .tab {
       flex: 1; padding: 10px; border: none; border-radius: 10px;
-      background: #f0f1f3; cursor: pointer; font-size: 15px;
+      background: #f0f1f3; cursor: pointer; font-size: 14px;
     }
     .tab.active { color: #fff; font-weight: 600; }
     .tab.income.active  { background: #16a34a; }
     .tab.expense.active { background: #dc2626; }
+    .tab.saving.active  { background: #7c3aed; }   /* 存款选中：紫色 */
 
     input, select {
       width: 100%; padding: 12px; font-size: 16px;
@@ -101,8 +128,9 @@
     .record .info .note { font-size: 12px; color: #999; margin-top: 2px; }
     .record .right { display: flex; align-items: center; gap: 8px; }
     .record .money { font-size: 16px; font-weight: 700; }
-    .money.in  { color: #16a34a; }
-    .money.out { color: #dc2626; }
+    .money.in     { color: #16a34a; }
+    .money.out    { color: #dc2626; }
+    .money.saving { color: #7c3aed; }
     .record .edit {
       border: none; background: #dbeafe; color: #2563eb;
       border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px;
@@ -143,10 +171,10 @@
     .report-overview { display: flex; text-align: center; }
     .report-overview .stat { flex: 1; }
     .report-line {
-      display: flex; justify-content: space-between;
+      display: flex; justify-content: space-between; align-items: center;
       padding: 6px 0; border-bottom: 1px solid #f0f1f3; font-size: 14px;
     }
-    .report-line .bar-wrap { flex: 1; margin: 0 10px; background: #f0f1f3; border-radius: 4px; height: 8px; align-self: center; }
+    .report-line .bar-wrap { flex: 1; margin: 0 10px; background: #f0f1f3; border-radius: 4px; height: 8px; }
     .report-line .bar { height: 8px; border-radius: 4px; background: #2563eb; }
   </style>
 </head>
@@ -157,6 +185,18 @@
   <div class="balance-card">
     <div class="label">当前余额</div>
     <div class="amount" id="balance">HK$0.00</div>
+  </div>
+
+  <!-- 储蓄目标 -->
+  <div class="goal-card">
+    <div class="goal-head">
+      <span class="goal-title">🎯 储蓄目标</span>
+      <button class="goal-set" id="goalBtn">设定目标</button>
+    </div>
+    <div class="goal-name" id="goalName">还没设定目标</div>
+    <div class="goal-amount" id="goalAmount"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="goal-pct" id="goalPct"></div>
   </div>
 
   <!-- 本月统计 -->
@@ -184,6 +224,7 @@
     <div class="tabs">
       <button class="tab expense active" id="tabExpense">💸 支出</button>
       <button class="tab income" id="tabIncome">💰 收入</button>
+      <button class="tab saving" id="tabSaving">🏦 存款</button>
     </div>
 
     <input type="number" id="amount" placeholder="金额（例如 20）" min="0" step="0.1">
@@ -230,22 +271,34 @@
     // 正在编辑的记录下标；null 表示「新增模式」
     let editingIndex = null;
 
-    // 从本地读取记录，没有就返回空数组
+    // 从本地读取记录
     function loadRecords() {
       const raw = localStorage.getItem('records');
       return raw ? JSON.parse(raw) : [];
     }
-
-    // 把记录保存回本地
     function saveRecords(records) {
       localStorage.setItem('records', JSON.stringify(records));
     }
 
+    // 储蓄目标：读 / 存
+    function loadGoal() {
+      const raw = localStorage.getItem('savingsGoal');
+      return raw ? JSON.parse(raw) : null;
+    }
+    function saveGoal(goal) {
+      localStorage.setItem('savingsGoal', JSON.stringify(goal));
+    }
+
     // ===== 渲染界面 =====
 
-    // 更新分类下拉框的选项
+    // 更新分类下拉框（存款类型不需要分类，直接隐藏）
     function renderCategories() {
       const sel = document.getElementById('category');
+      if (currentType === 'saving') {
+        sel.style.display = 'none';
+        return;
+      }
+      sel.style.display = 'block';
       sel.innerHTML = '';
       CATEGORIES[currentType].forEach(cat => {
         const opt = document.createElement('option');
@@ -255,25 +308,54 @@
       });
     }
 
-    // 更新余额数字
+    // 更新余额：收入加钱，支出和存款都减钱
     function renderBalance(records) {
       let total = 0;
       records.forEach(r => {
-        total += (r.type === 'income' ? r.amount : -r.amount);
+        if (r.type === 'income') total += r.amount;
+        else total -= r.amount; // expense 和 saving 都从余额扣掉
       });
       const el = document.getElementById('balance');
       el.textContent = 'HK$' + total.toFixed(2);
       el.className = 'amount ' + (total < 0 ? 'minus' : 'plus');
     }
 
-    // 更新本月统计（收入 / 支出 / 结余）
+    // 存款累计 = 所有 saving 记录之和
+    function totalSaving(records) {
+      return records.filter(r => r.type === 'saving').reduce((sum, r) => sum + r.amount, 0);
+    }
+
+    // 更新储蓄目标卡片
+    function renderGoal(records) {
+      const goal = loadGoal();
+      const saved = totalSaving(records);
+      const nameEl = document.getElementById('goalName');
+      const amountEl = document.getElementById('goalAmount');
+      const fillEl = document.getElementById('progressFill');
+      const pctEl = document.getElementById('goalPct');
+
+      if (!goal) {
+        nameEl.textContent = '还没设定目标，点右上角「设定目标」';
+        amountEl.textContent = '';
+        fillEl.style.width = '0%';
+        pctEl.textContent = '';
+        return;
+      }
+      nameEl.textContent = goal.name;
+      amountEl.textContent = '已存 HK$' + saved.toFixed(2) + ' / 目标 HK$' + goal.target.toFixed(2);
+      const pct = goal.target > 0 ? Math.min(100, saved / goal.target * 100) : 0;
+      fillEl.style.width = pct + '%';
+      pctEl.textContent = '进度 ' + pct.toFixed(0) + '%';
+    }
+
+    // 更新本月统计
     function renderStats(records) {
       const now = new Date();
       const year = now.getFullYear();
-      const month = now.getMonth(); // 0-11
+      const month = now.getMonth();
       let income = 0, expense = 0;
       records.forEach(r => {
-        if (!r.date) return; // 老记录没有日期，跳过
+        if (!r.date) return;
         const d = new Date(r.date);
         if (d.getFullYear() === year && d.getMonth() === month) {
           if (r.type === 'income') income += r.amount;
@@ -296,6 +378,8 @@
       }
       records.slice().reverse().forEach((r, i) => {
         const realIndex = records.length - 1 - i;
+        const moneyClass = r.type === 'income' ? 'in' : (r.type === 'saving' ? 'saving' : 'out');
+        const sign = r.type === 'income' ? '+' : '-';
         const div = document.createElement('div');
         div.className = 'record';
         div.innerHTML =
@@ -304,20 +388,16 @@
             '<div class="note">' + (r.note || '') + '</div>' +
           '</div>' +
           '<div class="right">' +
-            '<div class="money ' + (r.type === 'income' ? 'in' : 'out') + '">' +
-              (r.type === 'income' ? '+' : '-') + r.amount.toFixed(2) +
-            '</div>' +
+            '<div class="money ' + moneyClass + '">' + sign + r.amount.toFixed(2) + '</div>' +
             '<button class="edit" data-index="' + realIndex + '">改</button>' +
             '<button class="del" data-index="' + realIndex + '">删</button>' +
           '</div>';
         list.appendChild(div);
       });
 
-      // 「改」按钮 → 进入编辑模式
       document.querySelectorAll('.edit').forEach(btn => {
         btn.addEventListener('click', () => startEdit(Number(btn.dataset.index)));
       });
-      // 「删」按钮 → 删除
       document.querySelectorAll('.del').forEach(btn => {
         btn.addEventListener('click', () => {
           const idx = Number(btn.dataset.index);
@@ -333,33 +413,45 @@
     function refresh() {
       const records = loadRecords();
       renderBalance(records);
+      renderGoal(records);
       renderStats(records);
       renderList(records);
     }
 
     // ===== 编辑功能 =====
 
-    // 点「改」：把这条记录填回表单，进入编辑模式
     function startEdit(index) {
       const records = loadRecords();
       const r = records[index];
       editingIndex = index;
-      switchType(r.type); // 先切换类型，重建分类选项
+      switchType(r.type);
       document.getElementById('amount').value = r.amount;
-      document.getElementById('category').value = r.category;
+      if (r.type !== 'saving') document.getElementById('category').value = r.category;
       document.getElementById('note').value = r.note || '';
       document.getElementById('addBtn').textContent = '💾 保存修改';
       document.getElementById('cancelEdit').style.display = 'block';
       document.getElementById('amount').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // 取消编辑：回到新增模式
     function cancelEdit() {
       editingIndex = null;
       document.getElementById('amount').value = '';
       document.getElementById('note').value = '';
       document.getElementById('addBtn').textContent = '＋ 记一笔';
       document.getElementById('cancelEdit').style.display = 'none';
+    }
+
+    // ===== 设定储蓄目标 =====
+
+    function setGoal() {
+      const name = prompt('储蓄目标名称？例如「买新手机」');
+      if (name === null) return; // 点了取消
+      const target = prompt('目标金额（元）？例如 3000');
+      if (target === null) return;
+      const t = parseFloat(target);
+      if (!t || t <= 0) { alert('金额不对'); return; }
+      saveGoal({ name: name.trim() || '储蓄目标', target: t });
+      refresh();
     }
 
     // ===== 年度报告 =====
@@ -369,17 +461,15 @@
       const now = new Date();
       const year = now.getFullYear();
       let totalIn = 0, totalOut = 0;
-      const byMonth = {};    // 按月：{ 1: {in, out}, ... }
-      const byCategory = {}; // 按分类：{ 食物: 金额, ... }
+      const byMonth = {};
+      const byCategory = {};
 
       records.forEach(r => {
         if (!r.date) return;
         const d = new Date(r.date);
         if (d.getFullYear() !== year) return;
-
         const m = d.getMonth() + 1;
         if (!byMonth[m]) byMonth[m] = { in: 0, out: 0 };
-
         if (r.type === 'income') {
           totalIn += r.amount;
           byMonth[m].in += r.amount;
@@ -390,17 +480,13 @@
         }
       });
 
-      // 组装报告内容
       let html = '';
-
-      // 总览
       html += '<div class="report-section"><h3>全年总览</h3><div class="report-overview">' +
         '<div class="stat"><div class="stat-label">收入</div><div class="stat-value in">HK$' + totalIn.toFixed(2) + '</div></div>' +
         '<div class="stat"><div class="stat-label">支出</div><div class="stat-value out">HK$' + totalOut.toFixed(2) + '</div></div>' +
         '<div class="stat"><div class="stat-label">结余</div><div class="stat-value">HK$' + (totalIn - totalOut).toFixed(2) + '</div></div>' +
         '</div></div>';
 
-      // 支出分类占比
       const cats = Object.keys(byCategory).sort((a, b) => byCategory[b] - byCategory[a]);
       if (cats.length > 0) {
         html += '<div class="report-section"><h3>支出分类占比</h3>';
@@ -416,11 +502,10 @@
         html += '</div>';
       }
 
-      // 按月明细
       html += '<div class="report-section"><h3>按月收支</h3>';
       for (let m = 1; m <= 12; m++) {
         const data = byMonth[m];
-        if (!data) continue; // 没有记录的月份不显示
+        if (!data) continue;
         html += '<div class="report-line">' +
           '<span style="width:44px">' + m + '月</span>' +
           '<span style="flex:1;text-align:center">收 ' + data.in.toFixed(2) + '</span>' +
@@ -440,15 +525,17 @@
 
     // ===== 交互事件 =====
 
-    // 切换「支出 / 收入」
+    // 切换「支出 / 收入 / 存款」
     function switchType(type) {
       currentType = type;
       document.getElementById('tabExpense').classList.toggle('active', type === 'expense');
       document.getElementById('tabIncome').classList.toggle('active', type === 'income');
+      document.getElementById('tabSaving').classList.toggle('active', type === 'saving');
       renderCategories();
     }
     document.getElementById('tabExpense').addEventListener('click', () => switchType('expense'));
     document.getElementById('tabIncome').addEventListener('click', () => switchType('income'));
+    document.getElementById('tabSaving').addEventListener('click', () => switchType('saving'));
 
     // 点「记一笔 / 保存修改」
     document.getElementById('addBtn').addEventListener('click', () => {
@@ -457,12 +544,12 @@
         alert('请输入正确的金额');
         return;
       }
-      const category = document.getElementById('category').value;
+      // 存款类型没有分类，固定为「存款」；其他类型读下拉框
+      const category = currentType === 'saving' ? '存款' : document.getElementById('category').value;
       const note = document.getElementById('note').value.trim();
       const records = loadRecords();
 
       if (editingIndex !== null) {
-        // 编辑模式：替换原记录，保留原日期
         const old = records[editingIndex];
         records[editingIndex] = {
           type: currentType, amount, category, note,
@@ -470,7 +557,6 @@
         };
         cancelEdit();
       } else {
-        // 新增模式：加一条，并记下当前时间
         records.push({
           type: currentType, amount, category, note,
           date: new Date().toISOString()
@@ -483,10 +569,9 @@
       refresh();
     });
 
-    // 取消编辑
     document.getElementById('cancelEdit').addEventListener('click', cancelEdit);
+    document.getElementById('goalBtn').addEventListener('click', setGoal);
 
-    // 年度报告弹窗
     document.getElementById('reportBtn').addEventListener('click', showReport);
     document.getElementById('reportClose').addEventListener('click', () => {
       document.getElementById('reportModal').classList.remove('show');
@@ -499,7 +584,9 @@
 
     function exportData() {
       const records = loadRecords();
-      const json = JSON.stringify(records, null, 2);
+      const goal = loadGoal();
+      const data = { records, goal };
+      const json = JSON.stringify(data, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -513,9 +600,16 @@
       const reader = new FileReader();
       reader.onload = function (e) {
         try {
-          const records = JSON.parse(e.target.result);
-          if (!Array.isArray(records)) throw new Error('格式不对');
-          saveRecords(records);
+          const data = JSON.parse(e.target.result);
+          // 兼容旧版（只导出过数组）和新版（{records, goal}）
+          if (Array.isArray(data)) {
+            saveRecords(data);
+            localStorage.removeItem('savingsGoal');
+          } else {
+            saveRecords(data.records || []);
+            if (data.goal) saveGoal(data.goal);
+            else localStorage.removeItem('savingsGoal');
+          }
           refresh();
           alert('导入成功！');
         } catch (err) {
