@@ -12,7 +12,7 @@
       font-family: -apple-system, "Microsoft JhengHei", "PingFang HK", sans-serif;
       background: #f5f6f8;
       color: #1f2328;
-      max-width: 480px;   /* 手机宽度，方便在手机上也能用 */
+      max-width: 480px;
       margin: 0 auto;
       min-height: 100vh;
       padding: 20px 16px 60px;
@@ -30,13 +30,31 @@
       margin-bottom: 16px;
     }
     .balance-card .label { font-size: 13px; color: #888; }
-    .balance-card .amount {
-      font-size: 40px;
-      font-weight: 700;
-      margin: 6px 0;
+    .balance-card .amount { font-size: 40px; font-weight: 700; margin: 6px 0; }
+    .amount.plus  { color: #16a34a; }
+    .amount.minus { color: #dc2626; }
+
+    /* ===== 本月统计 ===== */
+    .stats-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
     }
-    .amount.plus  { color: #16a34a; }  /* 有钱剩：绿色 */
-    .amount.minus { color: #dc2626; }  /* 超支：红色 */
+    .stats-title { font-size: 13px; color: #888; display: block; margin-bottom: 10px; }
+    .stats-row { display: flex; text-align: center; }
+    .stat { flex: 1; }
+    .stat-label { font-size: 12px; color: #999; }
+    .stat-value { font-size: 17px; font-weight: 700; margin-top: 3px; }
+    .stat-value.in  { color: #16a34a; }
+    .stat-value.out { color: #dc2626; }
+    .report-btn {
+      width: 100%; margin-top: 14px; padding: 10px;
+      border: 1px solid #e2e4e8; border-radius: 10px;
+      background: #fafafa; cursor: pointer; font-size: 14px;
+    }
+    .report-btn:active { background: #f0f1f3; }
 
     /* ===== 记账表单 ===== */
     .form-card {
@@ -52,8 +70,8 @@
       background: #f0f1f3; cursor: pointer; font-size: 15px;
     }
     .tab.active { color: #fff; font-weight: 600; }
-    .tab.income.active  { background: #16a34a; }  /* 收入选中：绿 */
-    .tab.expense.active { background: #dc2626; }  /* 支出选中：红 */
+    .tab.income.active  { background: #16a34a; }
+    .tab.expense.active { background: #dc2626; }
 
     input, select {
       width: 100%; padding: 12px; font-size: 16px;
@@ -65,6 +83,11 @@
       color: #fff; cursor: pointer;
     }
     button.add:active { opacity: 0.8; }
+    .cancel-edit {
+      width: 100%; margin-top: 8px; padding: 8px;
+      border: none; background: none; color: #999;
+      cursor: pointer; font-size: 13px;
+    }
 
     /* ===== 记录列表 ===== */
     .list-title { font-size: 15px; margin: 8px 0 10px; color: #555; }
@@ -76,10 +99,14 @@
     }
     .record .info .cat { font-size: 14px; font-weight: 600; }
     .record .info .note { font-size: 12px; color: #999; margin-top: 2px; }
-    .record .right { display: flex; align-items: center; gap: 10px; }
+    .record .right { display: flex; align-items: center; gap: 8px; }
     .record .money { font-size: 16px; font-weight: 700; }
     .money.in  { color: #16a34a; }
     .money.out { color: #dc2626; }
+    .record .edit {
+      border: none; background: #dbeafe; color: #2563eb;
+      border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px;
+    }
     .record .del {
       border: none; background: #fee2e2; color: #dc2626;
       border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px;
@@ -93,6 +120,34 @@
       background: #fff; cursor: pointer;
     }
     .data-actions button:active { background: #f0f1f3; }
+
+    /* ===== 年度报告弹窗 ===== */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+      z-index: 100; padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: #fff; border-radius: 14px; padding: 20px;
+      width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto;
+    }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .modal-head h2 { font-size: 18px; }
+    .modal-close {
+      border: none; background: #f0f1f3; border-radius: 8px;
+      padding: 6px 10px; cursor: pointer; font-size: 14px;
+    }
+    .report-section { margin-bottom: 16px; }
+    .report-section h3 { font-size: 14px; color: #555; margin-bottom: 8px; }
+    .report-overview { display: flex; text-align: center; }
+    .report-overview .stat { flex: 1; }
+    .report-line {
+      display: flex; justify-content: space-between;
+      padding: 6px 0; border-bottom: 1px solid #f0f1f3; font-size: 14px;
+    }
+    .report-line .bar-wrap { flex: 1; margin: 0 10px; background: #f0f1f3; border-radius: 4px; height: 8px; align-self: center; }
+    .report-line .bar { height: 8px; border-radius: 4px; background: #2563eb; }
   </style>
 </head>
 <body>
@@ -102,6 +157,26 @@
   <div class="balance-card">
     <div class="label">当前余额</div>
     <div class="amount" id="balance">HK$0.00</div>
+  </div>
+
+  <!-- 本月统计 -->
+  <div class="stats-card">
+    <span class="stats-title">📅 <span id="statMonth">本月</span>统计</span>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-label">收入</div>
+        <div class="stat-value in" id="statIncome">HK$0.00</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">支出</div>
+        <div class="stat-value out" id="statExpense">HK$0.00</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">结余</div>
+        <div class="stat-value" id="statNet">HK$0.00</div>
+      </div>
+    </div>
+    <button class="report-btn" id="reportBtn">📊 查看年度报告</button>
   </div>
 
   <!-- 记账表单 -->
@@ -115,6 +190,7 @@
     <select id="category"></select>
     <input type="text" id="note" placeholder="备注（可选，例如「午餐」）">
     <button class="add" id="addBtn">＋ 记一笔</button>
+    <button class="cancel-edit" id="cancelEdit" style="display:none">✕ 取消编辑</button>
   </div>
 
   <!-- 数据备份 -->
@@ -128,6 +204,17 @@
   <div class="list-title">📋 记录</div>
   <div id="list"></div>
 
+  <!-- 年度报告弹窗 -->
+  <div class="modal" id="reportModal">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2>📊 <span id="reportYear"></span>年度报告</h2>
+        <button class="modal-close" id="reportClose">✕ 关闭</button>
+      </div>
+      <div id="reportBody"></div>
+    </div>
+  </div>
+
   <script>
     // ===== 数据存在浏览器本地（localStorage），关掉网页也不会丢 =====
 
@@ -139,6 +226,9 @@
 
     // 当前选中的类型，默认是「支出」
     let currentType = 'expense';
+
+    // 正在编辑的记录下标；null 表示「新增模式」
+    let editingIndex = null;
 
     // 从本地读取记录，没有就返回空数组
     function loadRecords() {
@@ -156,7 +246,7 @@
     // 更新分类下拉框的选项
     function renderCategories() {
       const sel = document.getElementById('category');
-      sel.innerHTML = ''; // 清空
+      sel.innerHTML = '';
       CATEGORIES[currentType].forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
@@ -169,14 +259,31 @@
     function renderBalance(records) {
       let total = 0;
       records.forEach(r => {
-        // 收入加钱，支出减钱
         total += (r.type === 'income' ? r.amount : -r.amount);
       });
       const el = document.getElementById('balance');
-      // 保留两位小数，显示港币符号
       el.textContent = 'HK$' + total.toFixed(2);
-      // 正数绿色，负数红色
       el.className = 'amount ' + (total < 0 ? 'minus' : 'plus');
+    }
+
+    // 更新本月统计（收入 / 支出 / 结余）
+    function renderStats(records) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth(); // 0-11
+      let income = 0, expense = 0;
+      records.forEach(r => {
+        if (!r.date) return; // 老记录没有日期，跳过
+        const d = new Date(r.date);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          if (r.type === 'income') income += r.amount;
+          else if (r.type === 'expense') expense += r.amount;
+        }
+      });
+      document.getElementById('statMonth').textContent = (month + 1) + '月';
+      document.getElementById('statIncome').textContent = 'HK$' + income.toFixed(2);
+      document.getElementById('statExpense').textContent = 'HK$' + expense.toFixed(2);
+      document.getElementById('statNet').textContent = 'HK$' + (income - expense).toFixed(2);
     }
 
     // 更新历史记录列表
@@ -187,9 +294,8 @@
         list.innerHTML = '<div class="empty">还没有记录，记第一笔吧 👆</div>';
         return;
       }
-      // 新的记录显示在最上面
       records.slice().reverse().forEach((r, i) => {
-        const realIndex = records.length - 1 - i; // 反推回原数组位置，方便删除
+        const realIndex = records.length - 1 - i;
         const div = document.createElement('div');
         div.className = 'record';
         div.innerHTML =
@@ -201,19 +307,24 @@
             '<div class="money ' + (r.type === 'income' ? 'in' : 'out') + '">' +
               (r.type === 'income' ? '+' : '-') + r.amount.toFixed(2) +
             '</div>' +
+            '<button class="edit" data-index="' + realIndex + '">改</button>' +
             '<button class="del" data-index="' + realIndex + '">删</button>' +
           '</div>';
         list.appendChild(div);
       });
 
-      // 给每个「删」按钮绑定删除事件
+      // 「改」按钮 → 进入编辑模式
+      document.querySelectorAll('.edit').forEach(btn => {
+        btn.addEventListener('click', () => startEdit(Number(btn.dataset.index)));
+      });
+      // 「删」按钮 → 删除
       document.querySelectorAll('.del').forEach(btn => {
         btn.addEventListener('click', () => {
           const idx = Number(btn.dataset.index);
           const records = loadRecords();
-          records.splice(idx, 1); // 移除这一条
+          records.splice(idx, 1);
           saveRecords(records);
-          refresh(); // 重新渲染
+          refresh();
         });
       });
     }
@@ -222,7 +333,109 @@
     function refresh() {
       const records = loadRecords();
       renderBalance(records);
+      renderStats(records);
       renderList(records);
+    }
+
+    // ===== 编辑功能 =====
+
+    // 点「改」：把这条记录填回表单，进入编辑模式
+    function startEdit(index) {
+      const records = loadRecords();
+      const r = records[index];
+      editingIndex = index;
+      switchType(r.type); // 先切换类型，重建分类选项
+      document.getElementById('amount').value = r.amount;
+      document.getElementById('category').value = r.category;
+      document.getElementById('note').value = r.note || '';
+      document.getElementById('addBtn').textContent = '💾 保存修改';
+      document.getElementById('cancelEdit').style.display = 'block';
+      document.getElementById('amount').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 取消编辑：回到新增模式
+    function cancelEdit() {
+      editingIndex = null;
+      document.getElementById('amount').value = '';
+      document.getElementById('note').value = '';
+      document.getElementById('addBtn').textContent = '＋ 记一笔';
+      document.getElementById('cancelEdit').style.display = 'none';
+    }
+
+    // ===== 年度报告 =====
+
+    function showReport() {
+      const records = loadRecords();
+      const now = new Date();
+      const year = now.getFullYear();
+      let totalIn = 0, totalOut = 0;
+      const byMonth = {};    // 按月：{ 1: {in, out}, ... }
+      const byCategory = {}; // 按分类：{ 食物: 金额, ... }
+
+      records.forEach(r => {
+        if (!r.date) return;
+        const d = new Date(r.date);
+        if (d.getFullYear() !== year) return;
+
+        const m = d.getMonth() + 1;
+        if (!byMonth[m]) byMonth[m] = { in: 0, out: 0 };
+
+        if (r.type === 'income') {
+          totalIn += r.amount;
+          byMonth[m].in += r.amount;
+        } else if (r.type === 'expense') {
+          totalOut += r.amount;
+          byMonth[m].out += r.amount;
+          byCategory[r.category] = (byCategory[r.category] || 0) + r.amount;
+        }
+      });
+
+      // 组装报告内容
+      let html = '';
+
+      // 总览
+      html += '<div class="report-section"><h3>全年总览</h3><div class="report-overview">' +
+        '<div class="stat"><div class="stat-label">收入</div><div class="stat-value in">HK$' + totalIn.toFixed(2) + '</div></div>' +
+        '<div class="stat"><div class="stat-label">支出</div><div class="stat-value out">HK$' + totalOut.toFixed(2) + '</div></div>' +
+        '<div class="stat"><div class="stat-label">结余</div><div class="stat-value">HK$' + (totalIn - totalOut).toFixed(2) + '</div></div>' +
+        '</div></div>';
+
+      // 支出分类占比
+      const cats = Object.keys(byCategory).sort((a, b) => byCategory[b] - byCategory[a]);
+      if (cats.length > 0) {
+        html += '<div class="report-section"><h3>支出分类占比</h3>';
+        cats.forEach(cat => {
+          const val = byCategory[cat];
+          const pct = totalOut > 0 ? (val / totalOut * 100) : 0;
+          html += '<div class="report-line">' +
+            '<span style="width:44px">' + cat + '</span>' +
+            '<span class="bar-wrap"><span class="bar" style="width:' + pct.toFixed(0) + '%"></span></span>' +
+            '<span style="width:110px;text-align:right">HK$' + val.toFixed(2) + ' (' + pct.toFixed(0) + '%)</span>' +
+            '</div>';
+        });
+        html += '</div>';
+      }
+
+      // 按月明细
+      html += '<div class="report-section"><h3>按月收支</h3>';
+      for (let m = 1; m <= 12; m++) {
+        const data = byMonth[m];
+        if (!data) continue; // 没有记录的月份不显示
+        html += '<div class="report-line">' +
+          '<span style="width:44px">' + m + '月</span>' +
+          '<span style="flex:1;text-align:center">收 ' + data.in.toFixed(2) + '</span>' +
+          '<span style="flex:1;text-align:right">支 ' + data.out.toFixed(2) + '</span>' +
+          '</div>';
+      }
+      html += '</div>';
+
+      if (cats.length === 0 && Object.keys(byMonth).length === 0) {
+        html = '<div class="empty">今年还没有记录，先去记几笔吧 👆</div>';
+      }
+
+      document.getElementById('reportYear').textContent = year;
+      document.getElementById('reportBody').innerHTML = html;
+      document.getElementById('reportModal').classList.add('show');
     }
 
     // ===== 交互事件 =====
@@ -237,7 +450,7 @@
     document.getElementById('tabExpense').addEventListener('click', () => switchType('expense'));
     document.getElementById('tabIncome').addEventListener('click', () => switchType('income'));
 
-    // 点击「记一笔」
+    // 点「记一笔 / 保存修改」
     document.getElementById('addBtn').addEventListener('click', () => {
       const amount = parseFloat(document.getElementById('amount').value);
       if (!amount || amount <= 0) {
@@ -246,38 +459,61 @@
       }
       const category = document.getElementById('category').value;
       const note = document.getElementById('note').value.trim();
-
       const records = loadRecords();
-      records.push({ type: currentType, amount, category, note });
-      saveRecords(records);
 
-      // 清空输入框，方便记下一笔
+      if (editingIndex !== null) {
+        // 编辑模式：替换原记录，保留原日期
+        const old = records[editingIndex];
+        records[editingIndex] = {
+          type: currentType, amount, category, note,
+          date: old.date || new Date().toISOString()
+        };
+        cancelEdit();
+      } else {
+        // 新增模式：加一条，并记下当前时间
+        records.push({
+          type: currentType, amount, category, note,
+          date: new Date().toISOString()
+        });
+      }
+
+      saveRecords(records);
       document.getElementById('amount').value = '';
       document.getElementById('note').value = '';
       refresh();
     });
 
+    // 取消编辑
+    document.getElementById('cancelEdit').addEventListener('click', cancelEdit);
+
+    // 年度报告弹窗
+    document.getElementById('reportBtn').addEventListener('click', showReport);
+    document.getElementById('reportClose').addEventListener('click', () => {
+      document.getElementById('reportModal').classList.remove('show');
+    });
+    document.getElementById('reportModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) document.getElementById('reportModal').classList.remove('show');
+    });
+
     // ===== 导出 / 导入 =====
 
-    // 导出：把数据变成 JSON 文件下载
     function exportData() {
       const records = loadRecords();
-      const json = JSON.stringify(records, null, 2); // 转成好看的 JSON 文字
-      const blob = new Blob([json], { type: 'application/json' }); // 包成文件
+      const json = JSON.stringify(records, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); // 造一个隐藏的下载链接
+      const a = document.createElement('a');
       a.href = url;
       a.download = '零用钱记账数据-' + new Date().toISOString().slice(0, 10) + '.json';
-      a.click(); // 触发下载
+      a.click();
       URL.revokeObjectURL(url);
     }
 
-    // 导入：读用户选的文件，还原数据
     function importData(file) {
-      const reader = new FileReader(); // 用来读文件的工具
+      const reader = new FileReader();
       reader.onload = function (e) {
         try {
-          const records = JSON.parse(e.target.result); // 把文字变回数据
+          const records = JSON.parse(e.target.result);
           if (!Array.isArray(records)) throw new Error('格式不对');
           saveRecords(records);
           refresh();
@@ -289,15 +525,10 @@
       reader.readAsText(file);
     }
 
-    // 点「导出」按钮 → 直接导出
     document.getElementById('exportBtn').addEventListener('click', exportData);
-
-    // 点「导入」按钮 → 弹出选文件框
     document.getElementById('importBtn').addEventListener('click', () => {
       document.getElementById('importFile').click();
     });
-
-    // 选中文件后 → 导入
     document.getElementById('importFile').addEventListener('change', (e) => {
       if (e.target.files[0]) importData(e.target.files[0]);
     });
