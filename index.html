@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>零用钱记账本</title>
+  <!-- 图表库 Chart.js（通过 CDN 引入，需要联网） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     /* ===== 全局样式 ===== */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,6 +83,17 @@
       background: #fafafa; cursor: pointer; font-size: 14px;
     }
     .report-btn:active { background: #f0f1f3; }
+
+    /* ===== 支出分类饼图 ===== */
+    .chart-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+    }
+    .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+    .chart-card canvas { max-height: 260px; }
 
     /* ===== 记账表单 ===== */
     .form-card {
@@ -217,6 +230,12 @@
       </div>
     </div>
     <button class="report-btn" id="reportBtn">📊 查看年度报告</button>
+  </div>
+
+  <!-- 支出分类饼图 -->
+  <div class="chart-card">
+    <div class="chart-title">🍩 本月支出分类</div>
+    <canvas id="expenseChart"></canvas>
   </div>
 
   <!-- 记账表单 -->
@@ -368,6 +387,49 @@
       document.getElementById('statNet').textContent = 'HK$' + (income - expense).toFixed(2);
     }
 
+    // 饼图实例（销毁旧图用，避免重复叠加）
+    let chartInstance = null;
+
+    // 更新本月支出分类饼图
+    function renderChart(records) {
+      if (typeof Chart === 'undefined') return; // 图表库没加载成功就不画
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const byCategory = {};
+      records.forEach(r => {
+        if (r.type !== 'expense' || !r.date) return;
+        const d = new Date(r.date);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          byCategory[r.category] = (byCategory[r.category] || 0) + r.amount;
+        }
+      });
+
+      const labels = Object.keys(byCategory);
+      const values = Object.values(byCategory);
+      const ctx = document.getElementById('expenseChart');
+
+      // 每次重画前先销毁旧图
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      if (labels.length === 0 || !ctx) return;
+
+      const colors = ['#2563eb', '#16a34a', '#dc2626', '#7c3aed', '#f59e0b', '#0891b2', '#db2777', '#65a30d'];
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: labels.map((_, i) => colors[i % colors.length])
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
     // 更新历史记录列表
     function renderList(records) {
       const list = document.getElementById('list');
@@ -415,6 +477,7 @@
       renderBalance(records);
       renderGoal(records);
       renderStats(records);
+      renderChart(records);
       renderList(records);
     }
 
